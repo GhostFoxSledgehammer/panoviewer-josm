@@ -1,0 +1,54 @@
+plugins {
+  id "org.openstreetmap.josm" version "0.7.1"
+  id "com.diffplug.spotless" version "5.17.0"
+  id "de.undercouch.download" version "4.1.2"
+}
+
+apply plugin: 'java-library'
+apply plugin: 'jacoco'
+apply plugin: 'application'
+repositories {
+  jcenter()
+  mavenCentral()
+}
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.targetCompatibility = JavaVersion.VERSION_1_8
+
+dependencies {
+  api files("libs/jogamp-fat.jar")
+  api group: 'org.joml', name: 'joml', version: '1.10.1'
+  packIntoJar("org.joml:joml:1.10.1")
+  packIntoJar(files("libs/jogamp-fat.jar"))
+  //packIntoJar("otherGroupId:otherArtifactId:42.0.0")
+}
+spotless {
+  format("misc") {
+    target("**/*.gradle", "**.*.md", "**/.gitignore")
+
+    trimTrailingWhitespace()
+    indentWithSpaces(4)
+    endWithNewline()
+  }
+  java {
+    // Avoid large formatting commits.
+    ratchetFrom("origin/master")
+    trimTrailingWhitespace()
+    indentWithSpaces(4)
+    endWithNewline()
+    removeUnusedImports()
+    importOrder("java", "javax", "")
+  }
+}
+
+download {
+    mkdir "libs"
+    src 'https://jogamp.org/deployment/archive/rc/v2.4.0-rc-20210111/fat/jogamp-fat.jar'
+    dest "libs"
+    overwrite false
+}
+
+josm {
+  pluginName = "panoviewer"
+  debugPort = 54321
+  josmCompileVersion = 18303
+}
