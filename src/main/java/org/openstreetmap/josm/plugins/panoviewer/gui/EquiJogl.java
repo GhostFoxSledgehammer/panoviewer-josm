@@ -13,6 +13,7 @@ import static com.jogamp.opengl.GL.GL_TEXTURE0;
 import static com.jogamp.opengl.GL.GL_TEXTURE_2D;
 import static com.jogamp.opengl.GL.GL_TEXTURE_MAX_ANISOTROPY_EXT;
 import static com.jogamp.opengl.GL.GL_TRIANGLES;
+import static java.lang.Math.asin;
 import static org.openstreetmap.josm.plugins.panoviewer.Settings.getProfile;
 import static org.openstreetmap.josm.plugins.panoviewer.utils.JoglUtil.createShaderProgram;
 
@@ -77,7 +78,7 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
   private int numVerts;
   private int fov;
   private static final int MAX_FOV = 110;
-  private static final int MIN_FOV = 20;
+  private static final int MIN_FOV = 5;
   private static final int IDEAL_FOV = 90;
   private boolean zoomEnabled;
   private boolean panningEnabled;
@@ -181,7 +182,6 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     gl.glUseProgram(rendering_program);
     mvLoc = gl.glGetUniformLocation(rendering_program, "mv_matrix");
     projLoc = gl.glGetUniformLocation(rendering_program, "proj_matrix");
-    pMat.setPerspective((float) Math.toRadians(fov), aspect, 0.1f, 1000.0f);
 
     mvMat.identity();
     mvMat.mul(vMat);
@@ -217,21 +217,21 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
   }
 
   @Override
-  public void paintImage(Graphics g, BufferedImage image, Rectangle target, Rectangle r) {
-    final BufferedImage currentOffscreenImage;
+  public void paintImage(Graphics g, BufferedImage image, Rectangle t, Rectangle r) {
+    BufferedImage currentOffscreenImage;
     if (cachedImage == null || !cachedImage.equals(image)) {
       setImage(image);
     }
-    //sharedDrawable.getContext().makeCurrent();
+    if (t == null) {
+      t = new Rectangle(0, 0, width, height);
+    }
+    setFov(2 * Math.toDegrees(asin(r.getHeight() / t.getHeight())));
     render(sharedDrawable);
     synchronized (this) {
       currentOffscreenImage = this.renderedImage;
     }
-    if (target == null) {
-      target = new Rectangle(0, 0, currentOffscreenImage.getWidth(null), currentOffscreenImage.getHeight(null));
-    }
     g.drawImage(currentOffscreenImage, 0, 0, null);
-    
+
   }
 
   @Override
@@ -331,5 +331,9 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     FloatBuffer texBuff = Buffers.newDirectFloatBuffer(texValue);
     gl.glBufferData(GL_ARRAY_BUFFER, texBuff.limit() * 4L, texBuff, GL_STATIC_DRAW);
+  }
+
+  private void setFov(double asin) {
+    zoom((float) (asin - fov));
   }
 }
