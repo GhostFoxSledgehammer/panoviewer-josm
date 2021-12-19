@@ -1,3 +1,4 @@
+// License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.plugins.panoviewer;
 
 import static org.openstreetmap.josm.gui.layer.geoimage.viewers.projections.ImageProjectionRegistry.registerViewer;
