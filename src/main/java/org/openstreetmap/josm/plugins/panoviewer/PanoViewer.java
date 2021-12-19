@@ -6,6 +6,7 @@ import org.openstreetmap.josm.plugins.Plugin;
 import org.openstreetmap.josm.plugins.PluginInformation;
 import org.openstreetmap.josm.plugins.panoviewer.gui.EquiJogl;
 import org.openstreetmap.josm.tools.JosmRuntimeException;
+import org.openstreetmap.josm.tools.Logging;
 
 public class PanoViewer extends Plugin {
 
@@ -22,6 +23,8 @@ public class PanoViewer extends Plugin {
       } catch (ReflectiveOperationException ex) {
         throw new JosmRuntimeException(ex);
       }
+    } else {
+      Logging.error("Cannot use OpenGL for panoviewer");
     }
   }
 }

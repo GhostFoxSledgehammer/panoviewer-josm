@@ -7,9 +7,10 @@ import com.jogamp.opengl.GLProfile;
 
 /**
  *
- * @author kshan
+ * @author Kishan Tripathi
  */
 public class Settings {
+
   private static final GLProfile gl;
   private static final GLCapabilities caps;
 
@@ -33,7 +34,7 @@ public class Settings {
   public static boolean checkMinimumVersion() {
     if (GLProfile.isAvailable(GLProfile.GL4)) {
       GLDrawableFactory factory = GLDrawableFactory.getFactory(GLProfile.get(GLProfile.GL4));
-      return factory.canCreateGLPbuffer(null, gl) || factory.canCreateFBO(null, gl);
+      return factory.canCreateGLPbuffer(factory.getDefaultDevice(), gl) || factory.canCreateFBO(factory.getDefaultDevice(), gl);
     }
     return false;
   }
