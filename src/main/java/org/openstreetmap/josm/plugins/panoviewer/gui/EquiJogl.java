@@ -13,7 +13,6 @@ import static com.jogamp.opengl.GL.GL_TEXTURE0;
 import static com.jogamp.opengl.GL.GL_TEXTURE_2D;
 import static com.jogamp.opengl.GL.GL_TEXTURE_MAX_ANISOTROPY_EXT;
 import static com.jogamp.opengl.GL.GL_TRIANGLES;
-import static org.openstreetmap.josm.plugins.panoviewer.Settings.getCaps;
 import static org.openstreetmap.josm.plugins.panoviewer.Settings.getProfile;
 import static org.openstreetmap.josm.plugins.panoviewer.utils.JoglUtil.createShaderProgram;
 
@@ -27,35 +26,22 @@ import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
 import java.util.Collections;
+import java.util.Random;
 import java.util.Set;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.DefaultGLCapabilitiesChooser;
-import static com.jogamp.opengl.GL.GL_FLOAT;
-import static com.jogamp.opengl.GL.GL_POINTS;
-import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL4;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLContext;
 import com.jogamp.opengl.GLDrawableFactory;
-import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLOffscreenAutoDrawable;
 import com.jogamp.opengl.GLProfile;
-import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
-import static com.jogamp.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 import com.jogamp.opengl.util.awt.AWTGLReadBufferUtil;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureData;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.logging.Logger;
-import javax.imageio.ImageIO;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -96,8 +82,8 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
   private boolean zoomEnabled;
   private boolean panningEnabled;
   private final int precision;
-  private float dragSensitivity = 1f;
-  private int wheelSensitivity = 5;
+  private float dragSensitivity;
+  private int wheelSensitivity;
   private Texture texture;
   private final static int DEFAULT_PRECISION = 90;
   private final GLOffscreenAutoDrawable sharedDrawable;
@@ -124,6 +110,7 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     sharedDrawable = factory.createOffscreenAutoDrawable(factory.getDefaultDevice(),
             factory.getAvailableCapabilities(factory.getDefaultDevice()).get(0),
             new DefaultGLCapabilitiesChooser(), width, height);
+    sharedDrawable.display();
     awtglReadBufferUtil = new AWTGLReadBufferUtil(getProfile(), true);
     this.precision = precision;
     mMat = new Matrix4f();
@@ -134,7 +121,8 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     sphereLoc = new Vector3f(0, 0, 0);
     zoomEnabled = true;
     panningEnabled = true;
-    sharedDrawable.display();
+    this.wheelSensitivity = 5;
+    this.dragSensitivity = 1f;
   }
 
   public void setImage(BufferedImage image) {
@@ -242,10 +230,8 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     if (target == null) {
       target = new Rectangle(0, 0, currentOffscreenImage.getWidth(null), currentOffscreenImage.getHeight(null));
     }
-//    g.drawImage(currentOffscreenImage, 0, 0, null);
-    g.drawImage(currentOffscreenImage,
-            target.x, target.y, target.x + target.width, target.y + target.height,
-            r.x, r.y, r.x + r.width, r.y + r.height, null);
+    g.drawImage(currentOffscreenImage, 0, 0, null);
+    
   }
 
   @Override
@@ -288,8 +274,9 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
 
   @Override
   public Vector3D getRotation() {
-    Vector3f target = camera.getTarget();
-    return new Vector3D(target.x, target.y, target.z);
+    double yaw = camera.getYaw();
+    double pitch = camera.getPitch();
+    return new Vector3D(Vector3D.VectorType.RPA, 1, yaw, pitch);
   }
 
   private void updateTexture(GL4 gl) {

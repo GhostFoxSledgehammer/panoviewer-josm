@@ -85,7 +85,8 @@ public class Camera {
     up.rotateY(deltaYaw);
     pitchAxis.rotateY(deltaYaw);
     yaw += deltaYaw;
-    yaw = yaw > 2 * Math.PI ? yaw - 2 * Math.PI : yaw < 0 ? yaw + 2 * Math.PI : yaw;
+    yaw = yaw > 2 * Math.PI ? yaw - 2 * Math.PI : yaw;
+    yaw = yaw < 0 ? yaw + 2 * Math.PI : yaw;
   }
 
   /**
