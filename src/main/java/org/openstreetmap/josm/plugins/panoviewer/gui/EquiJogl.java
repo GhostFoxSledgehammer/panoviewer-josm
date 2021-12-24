@@ -33,7 +33,6 @@ import java.util.Set;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.DefaultGLCapabilitiesChooser;
 import com.jogamp.opengl.GL4;
-import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLContext;
 import com.jogamp.opengl.GLDrawableFactory;
@@ -80,8 +79,6 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
   private static final int MAX_FOV = 110;
   private static final int MIN_FOV = 5;
   private static final int IDEAL_FOV = 90;
-  private boolean zoomEnabled;
-  private boolean panningEnabled;
   private final int precision;
   private float dragSensitivity;
   private int wheelSensitivity;
@@ -109,8 +106,8 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     caps.setHardwareAccelerated(true);
     caps.setOnscreen(false);
     sharedDrawable = factory.createOffscreenAutoDrawable(factory.getDefaultDevice(),
-            factory.getAvailableCapabilities(factory.getDefaultDevice()).get(0),
-            new DefaultGLCapabilitiesChooser(), width, height);
+    factory.getAvailableCapabilities(factory.getDefaultDevice()).get(0),
+    new DefaultGLCapabilitiesChooser(), width, height);
     sharedDrawable.display();
     awtglReadBufferUtil = new AWTGLReadBufferUtil(getProfile(), true);
     this.precision = precision;
@@ -120,13 +117,11 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     mvMat = new Matrix4f();
     camera = new Camera();
     sphereLoc = new Vector3f(0, 0, 0);
-    zoomEnabled = true;
-    panningEnabled = true;
     this.wheelSensitivity = 5;
     this.dragSensitivity = 1f;
   }
 
-  public void setImage(BufferedImage image) {
+  private void setImage(BufferedImage image) {
     cachedImage = image;
     textureData = AWTTextureIO.newTextureData(getProfile(), image, true);
     updateImage = true;
@@ -134,29 +129,21 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     fov = IDEAL_FOV;
   }
 
-  public boolean isPanningEnabled() {
-    return panningEnabled;
-  }
-
-  public void enablePanning(boolean enable) {
-    this.panningEnabled = enable;
-  }
-
-  public void pan(float panX, float panY) {
-    float newYaw = (panX * fov / IDEAL_FOV);
-    float newPitch = (panY * fov / IDEAL_FOV);
+  private void pan(float panX, float panY) {
+    float scale = (float) (Math.sin(Math.toRadians(fov / 2)) / Math.sin(Math.toRadians(IDEAL_FOV / 2)));
+    float newYaw = panX * scale;
+    float newPitch = panY * scale;
     camera.rotate(newYaw, newPitch);
     vMat.set(camera.getViewMatrix());
   }
 
-  public void enableZoom(boolean enable) {
-    this.zoomEnabled = enable;
-  }
-
-  public boolean isZoomEnabled() {
-    return zoomEnabled;
-  }
-
+  /**
+   * Zoom the camera by changing the fov. Zoom in effect when change is negative, zoom out effect when change
+   * is positive. fov is bound by max and min fov.
+   * @param zoomBy The amount in degrees by which fov is changed.
+   * @see #MAX_FOV
+   * @see #MIN_FOV
+   */
   public void zoom(float zoomBy) {
     fov += (int) zoomBy;
     fov = Math.min(fov, MAX_FOV);
@@ -164,15 +151,19 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     pMat.setPerspective((float) Math.toRadians(fov), aspect, 0.1f, 1000.0f);
   }
 
-  public void render(GLAutoDrawable glad) {
-    int makeCurrent = glad.getContext().makeCurrent();
+  /**
+   * Renders a frame showing 
+   * @param sharedDrawable
+   */
+  private void render() {
+    int makeCurrent = sharedDrawable.getContext().makeCurrent();
     if (makeCurrent == GLContext.CONTEXT_NOT_CURRENT) {
       Logging.error("Cannot make gl context current");
       return;
     }
-    GL4 gl = glad.getGL().getGL4();
+    GL4 gl = sharedDrawable.getGL().getGL4();
     if (!initialized) {
-      init(glad);
+      init();
     }
     if (updateImage) {
       updateTexture(gl);
@@ -225,8 +216,8 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     if (t == null) {
       t = new Rectangle(0, 0, width, height);
     }
-    setFov(2 * Math.toDegrees(asin(r.getHeight() / t.getHeight())));
-    render(sharedDrawable);
+    setFov(MAX_FOV * (asin(r.getHeight() / t.getHeight())));
+    render();
     synchronized (this) {
       currentOffscreenImage = this.renderedImage;
     }
@@ -243,7 +234,7 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
   public void componentResized(ComponentEvent e) {
     final Component imgDisplay = e.getComponent();
     if (e.getComponent().getWidth() > 0
-            && e.getComponent().getHeight() > 0) {
+    && e.getComponent().getHeight() > 0) {
       width = e.getComponent().getWidth();
       height = e.getComponent().getHeight();
       sharedDrawable.setSurfaceSize(width, height);
@@ -290,11 +281,11 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     updateImage = false;
   }
 
-  private void init(GLAutoDrawable glad) {
-    GL4 gL4 = glad.getGL().getGL4();
+  private void init() {
+    GL4 gL4 = sharedDrawable.getGL().getGL4();
     rendering_program = createShaderProgram(gL4, "Shaders/vertex.shader", "Shaders/frag.shader");
     setupVertices(gL4);
-    aspect = (float) glad.getSurfaceWidth() / (float) glad.getSurfaceHeight();
+    aspect = (float) sharedDrawable.getSurfaceWidth() / (float) sharedDrawable.getSurfaceHeight();
     pMat.setPerspective((float) Math.toRadians(fov), aspect, 0.1f, 1000.0f);
     vMat.set(camera.getViewMatrix());
     mMat.translation(sphereLoc);
@@ -302,6 +293,10 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     initialized = true;
   }
 
+  /**
+   * Creates a spherical mesh containing vertices and texture coordinates and sends it to GPU using VBOs.
+   * @param gl The gl object.
+   */
   private void setupVertices(GL4 gl) {
     Sphere sphere = new Sphere(precision);
     numVerts = sphere.getIndices().length;
@@ -333,7 +328,11 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     gl.glBufferData(GL_ARRAY_BUFFER, texBuff.limit() * 4L, texBuff, GL_STATIC_DRAW);
   }
 
-  private void setFov(double asin) {
-    zoom((float) (asin - fov));
+  /**
+   * Sets and zooms to the desired fov(in degrees).
+   * @param newFov The fov to set.
+   */
+  private void setFov(double newFov) {
+    zoom((float) (newFov - fov));
   }
 }

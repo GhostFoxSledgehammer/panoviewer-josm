@@ -11,21 +11,27 @@ import org.joml.Vector3f;
  */
 public class Sphere {
 
-  private int numVertices, numIndices, horizontalP;
+  private final int numVertices;
+  private final int numIndices;
+  private final int horizontalP;
+  private final int verticalP;
   private int[] indices;
   private Vector3f[] vertices;
   private Vector2f[] texCoords;
-  private final int verticalP;
 
-  public Sphere(int width) {
-    horizontalP = width;
+  /**
+   * Creates a Sphere to be passed to OpenGL VBO and drawn using GL_TRIANGLES mode.
+   * @param precision The horizontal precision of sphere.
+   */
+  public Sphere(int precision) {
+    horizontalP = precision;
     verticalP = horizontalP / 2;
+    numVertices = (verticalP + 1) * (horizontalP + 1);
+    numIndices = verticalP * horizontalP * 6;
     initSphere();
   }
 
   private void initSphere() {
-    numVertices = (verticalP + 1) * (horizontalP + 1);
-    numIndices = verticalP * horizontalP * 6;
     vertices = new Vector3f[numVertices];
     indices = new int[numIndices];
     double sliceAngle = PI / verticalP;
@@ -47,7 +53,7 @@ public class Sphere {
          * diffrent conventions used by java image and opengl textures
          */
         x = 1 - (float) j / horizontalP;
-        z = (1 - (float) i / verticalP);
+        z = 1 - (float) i / verticalP;
         texCoords[i * (horizontalP + 1) + j].set(x, z);
       }
     }
