@@ -152,7 +152,7 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
   }
 
   /**
-   * Renders a frame showing 
+   * Renders a frame showing
    * @param sharedDrawable
    */
   private void render() {
