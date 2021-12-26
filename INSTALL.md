@@ -2,7 +2,7 @@
 
 ```shell
 git clone git@gitlab.com:GhostFoxSledgehammer/panoviewer-josm.git
-cd Mapillary
+cd panoviewer-josm
 ```
 
 ## Building the plugin with Gradle
