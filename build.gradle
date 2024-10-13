@@ -50,5 +50,5 @@ download {
 josm {
   pluginName = "panoviewer"
   debugPort = 54321
-  josmCompileVersion = 18303
+  josmCompileVersion = 18940
 }

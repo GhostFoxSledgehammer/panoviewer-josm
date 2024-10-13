@@ -127,6 +127,7 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
     updateImage = true;
     camera.reset();
     fov = IDEAL_FOV;
+    vMat.set(camera.getViewMatrix());
   }
 
   private void pan(float panX, float panY) {
