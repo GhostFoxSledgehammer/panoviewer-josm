@@ -263,9 +263,8 @@ public class EquiJogl extends ComponentAdapter implements IImageViewer {
 
   @Override
   public Vector3D getRotation() {
-    double yaw = camera.getYaw();
-    double pitch = camera.getPitch();
-    return new Vector3D(Vector3D.VectorType.RPA, 1, yaw, pitch);
+    Vector3f direction = camera.getDirectionVector();
+    return new Vector3D(Vector3D.VectorType.XYZ, direction.x(), direction.y(), direction.z());
   }
 
   private void updateTexture(GL4 gl) {

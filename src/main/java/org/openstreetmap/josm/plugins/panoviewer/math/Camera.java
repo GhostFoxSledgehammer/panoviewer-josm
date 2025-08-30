@@ -133,4 +133,13 @@ public class Camera {
     pitchAxis.set(1, 0, 0);
     updateViewMatrix();
   }
+
+  /**
+   * Returns the direction vector of the camera.
+   *
+   * @return the direction vector as a Vector3f
+   */
+  public Vector3f getDirectionVector() {
+    return target;
+  }
 }
