@@ -19,7 +19,6 @@ dependencies {
   api group: 'org.joml', name: 'joml', version: '1.10.1'
   packIntoJar("org.joml:joml:1.10.1")
   packIntoJar(files("libs/jogamp-fat.jar"))
-  //packIntoJar("otherGroupId:otherArtifactId:42.0.0")
 }
 spotless {
   format("misc") {
